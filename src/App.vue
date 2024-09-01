@@ -25,31 +25,41 @@
             4. 处理成 svg 图:
             <button @click="handleFont">处理</button>
         </div>
-        <div>
+        <!-- <div>
             5. 动起来动起来:
             <button @click="handleAnimation">动感光波！</button>
-        </div>
+        </div> -->
 
         <hr />
-        <svg width="1000" height="200" viewBox="0 0 1000 200">
+        <!-- <svg width="1000" height="200" viewBox="0 0 1000 200">
             <path
+                v-for="(stroke, index) in strokes"
                 ref="pathRef"
-                :d="paths"
-                fill="none"
+                :d="stroke.path"
+                fill="white"
                 stroke="red"
                 strokeWidth="2"
-                style="animation: 'draw 2s linear forwards';"
-                :style="{
-                  animation: 'draw 2s linear forwards'
-                }"
+                :chip-path="`url(#clip-path-${index})`)"
             />
-        </svg>
+        </svg> -->
+        <draw-svg
+            v-if="fontData"
+            :font="fontData"
+            :text="text"
+            :fontSize="48"
+            :height="200"
+            stroke="white"
+            :strokeWidth="1"
+            :animationDuration="0.5"
+        >
+        </draw-svg>
     </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from "vue";
+import { ref, computed, nextTick } from "vue";
 import opentype from "opentype.js";
+import drawSvg from "./components/drawSvg.vue";
 
 // 提示信息
 const tips = ref("");
@@ -59,8 +69,8 @@ const localFontList = ref([]);
 const selectedFont = ref("");
 // 输入的文字
 const text = ref("前端小海");
+// 笔画
 const paths = ref();
-const pathRef = ref();
 // 中文字体
 const localFontList_cn = computed(() => {
     const reg = /[\u4e00-\u9fa5]/;
@@ -81,9 +91,12 @@ const refreshLoadFontList = () => {
     loadLocalFontList();
 };
 
+const fontData = ref();
+
 // 处理输入的文字
 const handleFont = async () => {
-    paths.value = null;
+    fontData.value = null
+    // paths.value = null;
     // 找到字体
     const currentFont = localFontList.value.find(
         (item) => item.fullName === selectedFont.value
@@ -92,31 +105,7 @@ const handleFont = async () => {
     const blob = await currentFont.blob();
     const arrayBuffer = await blob.arrayBuffer();
     // opentype 读取 字体
-    const fontData = await opentype.parse(arrayBuffer);
-    console.log("fontData", fontData);
-    // 循环处理 text
-    // const y =
-    //     ((fontData.ascender / 2 + fontData.descender / 2) /
-    //         fontData.unitsPerEm) *
-    //     200;
-    const fontPath = fontData.getPath(text.value, 0, 100, 100);
-    paths.value = fontPath.toPathData();
-    // text.value.split("").forEach((item) => {
-    //     const fontPath = fontData.getPath(item, -100, y, 200);
-    //     console.log("path", fontPath);
-    //     paths.value.push({
-    //         label: item,
-    //         path: fontPath.toPathData(),
-    //     });
-    // });
-};
-
-// 动起来
-const handleAnimation = () => {
-    const len = pathRef.value.getTotalLength();
-    console.log("len", len);
-    pathRef.value.style.strokeDasharray = len;
-    pathRef.value.style.strokeDashoffset = len;
+    fontData.value = await opentype.parse(arrayBuffer);
 };
 </script>
 
